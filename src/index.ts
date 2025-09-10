@@ -10,11 +10,11 @@ app.use(express.json());
 app.use(
   mcpAuthMetadataRouter({
     oauthMetadata: {
-      authorization_endpoint: "https://my-idp.com/oauth2/authorize",
-      token_endpoint: "https://my-idp.com/oauth2/token",
-      registration_endpoint: "https://my-idp.com/oauth2/register",
+      authorization_endpoint: "https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/oauth/authorize",
+      token_endpoint: "https://iced-snickerdoodle-7781.customers.stytch.dev/v1/oauth2/token",
+      // registration_endpoint: "https://my-idp.com/oauth2/register",
       response_types_supported: ["code"],
-      issuer: "http://localhost:3000",
+      issuer: "https://iced-snickerdoodle-7781.customers.stytch.dev",
     },
     resourceServerUrl: new URL("http://localhost:3000"),
   })
