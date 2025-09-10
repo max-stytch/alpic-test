@@ -14,7 +14,7 @@ app.use(
       token_endpoint: "https://iced-snickerdoodle-7781.customers.stytch.dev/v1/oauth2/token",
       // registration_endpoint: "https://my-idp.com/oauth2/register",
       response_types_supported: ["code"],
-      issuer: "https://iced-snickerdoodle-7781.customers.stytch.dev",
+      issuer: "http://localhost:3000",
     },
     resourceServerUrl: new URL("http://localhost:3000"),
   })
