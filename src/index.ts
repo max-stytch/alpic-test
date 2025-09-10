@@ -1,4 +1,5 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { mcpAuthMetadataRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import express, { type Request, type Response } from "express";
 
 import { getServer } from "./server.js";
@@ -6,6 +7,18 @@ import { config } from "./config.js";
 
 const app = express();
 app.use(express.json());
+app.use(
+  mcpAuthMetadataRouter({
+    oauthMetadata: {
+      authorization_endpoint: "https://my-idp.com/oauth2/authorize",
+      token_endpoint: "https://my-idp.com/oauth2/token",
+      registration_endpoint: "https://my-idp.com/oauth2/register",
+      response_types_supported: ["code"],
+      issuer: "http://localhost:3000",
+    },
+    resourceServerUrl: new URL("http://localhost:3000"),
+  })
+);
 
 app.post("/mcp", async (req: Request, res: Response) => {
   try {
