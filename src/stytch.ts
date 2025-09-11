@@ -15,12 +15,18 @@ function getClient(): Client {
 }
 
 export const stytchVerifier = async (token: string): Promise<AuthInfo> => {
-  const { audience, scope, expires_at, ...rest } = await getClient().idp.introspectTokenLocal(token);
-  return {
-    token,
-    clientId: audience as string,
-    scopes: scope.split(" "),
-    expiresAt: expires_at,
-    extra: rest,
-  } satisfies AuthInfo;
+  try {
+    const { audience, scope, expires_at, ...rest } = await getClient().idp.introspectTokenLocal(token);
+    return {
+      token,
+      clientId: audience as string,
+      scopes: scope.split(" "),
+      expiresAt: expires_at,
+      extra: rest,
+    } satisfies AuthInfo;
+  } catch (error) {
+    console.error('FAILED AUTH')
+    console.error(error);
+    throw error
+  }
 };
