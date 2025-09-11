@@ -1,24 +1,35 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { mcpAuthMetadataRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import express, { type Request, type Response } from "express";
 
 import { getServer } from "./server.js";
 import { config } from "./config.js";
+import { stytchVerifier } from "./stytch.js";
 
 const app = express();
 app.use(express.json());
+
+const authDomain = process.env.STYTCH_DOMAIN!;
 app.use(
   mcpAuthMetadataRouter({
     oauthMetadata: {
-      authorization_endpoint: "https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/oauth/authorize",
-      token_endpoint: "https://iced-snickerdoodle-7781.customers.stytch.dev/v1/oauth2/token",
-      // registration_endpoint: "https://my-idp.com/oauth2/register",
+      authorization_endpoint: `https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/`,
+      token_endpoint: `${authDomain}/v1/oauth2/token`,
+      registration_endpoint: `${authDomain}/v1/oauth2/register`,
       response_types_supported: ["code"],
-      issuer: "http://localhost:3000",
+      issuer: authDomain,
     },
     resourceServerUrl: new URL("http://localhost:3000"),
   })
 );
+
+app.use(requireBearerAuth({
+  verifier: {
+    verifyAccessToken: stytchVerifier
+  },
+  resourceMetadataUrl: 'http://localhost:3000',
+}))
 
 app.post("/mcp", async (req: Request, res: Response) => {
   try {
