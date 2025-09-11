@@ -24,14 +24,14 @@ app.use(
   })
 );
 
-app.use(requireBearerAuth({
+const bearerAuthMiddleware = requireBearerAuth({
   verifier: {
     verifyAccessToken: stytchVerifier
   },
   resourceMetadataUrl: 'http://localhost:3000',
-}))
+});
 
-app.post("/mcp", async (req: Request, res: Response) => {
+app.post("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -60,7 +60,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/mcp", async (req: Request, res: Response) => {
+app.get("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => {
   console.log("Received GET MCP request");
   res.writeHead(405).end(
     JSON.stringify({
@@ -74,7 +74,7 @@ app.get("/mcp", async (req: Request, res: Response) => {
   );
 });
 
-app.delete("/mcp", async (req: Request, res: Response) => {
+app.delete("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => {
   console.log("Received GET MCP request");
   res.writeHead(405).end(
     JSON.stringify({
