@@ -14,11 +14,35 @@ const authDomain = process.env.STYTCH_DOMAIN!;
 app.use(
   mcpAuthMetadataRouter({
     oauthMetadata: {
-      authorization_endpoint: `https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/`,
+      issuer: authDomain,
       token_endpoint: `${authDomain}/v1/oauth2/token`,
       registration_endpoint: `${authDomain}/v1/oauth2/register`,
-      response_types_supported: ["code"],
-      issuer: authDomain,
+      jwks_uri: `${authDomain}/.well-known/jwks.json`,
+      userinfo_endpoint: `${authDomain}/v1/oauth2/userinfo`,
+      "authorization_endpoint": "https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/oauth/authorize",
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "response_types_supported": [
+        "code",
+        "code token"
+      ],
+      "scopes_supported": [
+        "openid",
+        "profile",
+        "email",
+        "phone",
+        "offline_access"
+      ],
+      "token_endpoint_auth_methods_supported": [
+        "client_secret_basic",
+        "client_secret_post",
+        "none"
+      ],
     },
     resourceServerUrl: new URL("http://localhost:3000"),
   })
