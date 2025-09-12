@@ -112,6 +112,10 @@ app.delete("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => 
   );
 });
 
+app.get('/test', (req: Request, res: Response) => {
+  res.status(200).json({yay: true});
+})
+
 app.listen(config.MCP_HTTP_PORT, (error) => {
   if (error) {
     console.error("Failed to start server:", error);
