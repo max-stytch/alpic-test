@@ -16,7 +16,7 @@ if(!authDomain) {
 }
 
 app.use(
-  ".well-known/oauth-protected-resource",
+  "/.well-known/oauth-protected-resource",
   metadataHandler(async () => ({
     resource: new URL("http://localhost:3000").href,
     authorization_servers: [authDomain],
@@ -25,7 +25,7 @@ app.use(
 );
 
 app.use(
-  "./well-known/oauth-authorization-server",
+  "/.well-known/oauth-authorization-server",
   metadataHandler(async () =>
     fetch(new URL("./well-known/oauth-authorization-server", authDomain))
       .then((res) => res.json()),
