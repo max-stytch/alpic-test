@@ -51,6 +51,21 @@ export const getServer = (): McpServer => {
     },
   );
 
+  server.tool(
+    "whoami",
+    "Echoes information about the caller authentication context",
+    async ({ authInfo }): Promise<CallToolResult> => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(authInfo),
+          },
+        ],
+      };
+    },
+  );
+
   server.resource(
     "greeting-resource",
     "https://example.com/greetings/default",

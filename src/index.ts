@@ -1,58 +1,42 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { mcpAuthMetadataRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import express, { type Request, type Response } from "express";
 
 import { getServer } from "./server.js";
 import { config } from "./config.js";
 import { stytchVerifier } from "./stytch.js";
+import { metadataHandler } from "./metadata.js";
 
 const app = express();
 app.use(express.json());
 
-const authDomain = process.env.STYTCH_DOMAIN!;
+const authDomain = process.env.STYTCH_DOMAIN;
+if(!authDomain) {
+  throw new Error("Missing auth domain. Ensure STYTCH_DOMAIN env variable is set.");
+}
+
 app.use(
-  mcpAuthMetadataRouter({
-    oauthMetadata: {
-      issuer: authDomain,
-      token_endpoint: `${authDomain}/v1/oauth2/token`,
-      registration_endpoint: `${authDomain}/v1/oauth2/register`,
-      jwks_uri: `${authDomain}/.well-known/jwks.json`,
-      userinfo_endpoint: `${authDomain}/v1/oauth2/userinfo`,
-      "authorization_endpoint": "https://mcp-stytch-consumer-todo-list.maxwell-gerber42.workers.dev/oauth/authorize",
-      "code_challenge_methods_supported": [
-        "S256"
-      ],
-      "grant_types_supported": [
-        "authorization_code",
-        "refresh_token"
-      ],
-      "response_types_supported": [
-        "code",
-        "code token"
-      ],
-      "scopes_supported": [
-        "openid",
-        "profile",
-        "email",
-        "phone",
-        "offline_access"
-      ],
-      "token_endpoint_auth_methods_supported": [
-        "client_secret_basic",
-        "client_secret_post",
-        "none"
-      ],
-    },
-    resourceServerUrl: new URL("http://localhost:3000"),
-  })
+  ".well-known/oauth-protected-resource",
+  metadataHandler(async () => ({
+    resource: new URL("http://localhost:3000").href,
+    authorization_servers: [authDomain],
+    scopes_supported: ["openid", "email", "profile"],
+  })),
+);
+
+app.use(
+  "./well-known/oauth-authorization-server",
+  metadataHandler(async () =>
+    fetch(new URL("./well-known/oauth-authorization-server", authDomain))
+      .then((res) => res.json()),
+  ),
 );
 
 const bearerAuthMiddleware = requireBearerAuth({
   verifier: {
-    verifyAccessToken: stytchVerifier
+    verifyAccessToken: stytchVerifier,
   },
-  resourceMetadataUrl: 'http://localhost:3000',
+  resourceMetadataUrl: "http://localhost:3000",
 });
 
 app.post("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => {
@@ -111,10 +95,6 @@ app.delete("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => 
     }),
   );
 });
-
-app.get('/test', (req: Request, res: Response) => {
-  res.status(200).json({yay: true});
-})
 
 app.listen(config.MCP_HTTP_PORT, (error) => {
   if (error) {
