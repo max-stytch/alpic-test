@@ -24,10 +24,11 @@ app.use(
   })),
 );
 
+
 app.use(
   "/.well-known/oauth-authorization-server",
   metadataHandler(async () =>
-    fetch(new URL("./well-known/oauth-authorization-server", authDomain))
+    fetch(new URL("/.well-known/oauth-authorization-server", authDomain))
       .then((res) => res.json()),
   ),
 );
