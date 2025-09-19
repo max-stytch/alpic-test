@@ -5,6 +5,7 @@ dotenv.config();
 
 const EnvSchema = z.object({
   MCP_HTTP_PORT: z.coerce.number().int().positive().default(3000),
+  NEON_DATABASE_URL: z.string(),
 });
 
 const parsedEnv = EnvSchema.safeParse(process.env);

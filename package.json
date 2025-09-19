@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "@neondatabase/serverless": "^1.0.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "stytch": "^12.33.0",

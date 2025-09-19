@@ -6,6 +6,7 @@ import { getServer } from "./server.js";
 import { config } from "./config.js";
 import { stytchVerifier } from "./stytch.js";
 import { metadataHandler } from "./metadata.js";
+import { initDb } from "./dal.js";
 
 const app = express();
 app.use(express.json());
@@ -23,7 +24,6 @@ app.use(
     scopes_supported: ["openid", "email", "profile"],
   })),
 );
-
 
 app.use(
   "/.well-known/oauth-authorization-server",
@@ -97,13 +97,16 @@ app.delete("/mcp", bearerAuthMiddleware, async (req: Request, res: Response) => 
   );
 });
 
-app.listen(config.MCP_HTTP_PORT, (error) => {
-  if (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-  console.log(`MCP Streamable HTTP Server listening on port ${config.MCP_HTTP_PORT}`);
-});
+initDb().then(() => {
+  app.listen(config.MCP_HTTP_PORT, (error) => {
+    if (error) {
+      console.error("Failed to start server:", error);
+      process.exit(1);
+    }
+    console.log(`MCP Streamable HTTP Server listening on port ${config.MCP_HTTP_PORT}`);
+  });
+})
+
 
 process.on("SIGINT", async () => {
   console.log("Server shutdown complete");

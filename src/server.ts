@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { type CallToolResult, type GetPromptResult, type ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
+import { type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { UserTasksDal } from "./dal.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 
 export const getServer = (): McpServer => {
   const server = new McpServer(
@@ -11,22 +13,42 @@ export const getServer = (): McpServer => {
     { capabilities: {} },
   );
 
-  // Register a simple prompt
-  server.prompt(
-    "greeting-template",
-    "A simple greeting prompt template",
+  const getTaskDal = (authInfo: AuthInfo | undefined) => {
+    if (!authInfo || !authInfo.extra) {
+      throw Error("Auth Info missing");
+    }
+    return UserTasksDal.forUser(authInfo.extra.subject as string);
+  };
+
+  server.tool("List tasks", "List all the tasks previously created", async ({ authInfo }): Promise<CallToolResult> => {
+    const tasks = await getTaskDal(authInfo).getTasks();
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Tasks: ${JSON.stringify(tasks)}`,
+        },
+      ],
+    };
+  });
+
+  server.tool(
+    "Create task",
+    "Creates a new task",
     {
-      name: z.string().describe("Name to include in greeting"),
+      title: z.string().describe("Title of the task"),
+      description: z.string().describe("Description of the task"),
+      priority: z.enum(['0', '1', '2']).transform(val => Number(val) as 0 | 1 | 2).optional().default('0').describe("Priority of the task. 0 is low, 2 is high."),
     },
-    async ({ name }): Promise<GetPromptResult> => {
+    async ({title, description, priority}, { authInfo }): Promise<CallToolResult> => {
+      const task = await getTaskDal(authInfo).createTask(title, description, 'pending', priority);
+
       return {
-        messages: [
+        content: [
           {
-            role: "user",
-            content: {
-              type: "text",
-              text: `Please greet ${name} in a friendly manner.`,
-            },
+            type: "text",
+            text: `Task created successfully: ${JSON.stringify(task)}`,
           },
         ],
       };
@@ -34,17 +56,24 @@ export const getServer = (): McpServer => {
   );
 
   server.tool(
-    "greet",
-    "A simple greeting tool",
+    "Update task",
+    "Updates an existing task",
     {
-      name: z.string().describe("Name to greet"),
+      taskId: z.number().describe("ID of the task to update"),
+      title: z.string().optional().describe("New title of the task"),
+      description: z.string().optional().describe("New description of the task"),
+      status: z.enum(['pending', 'in_progress', 'done']).optional().describe("New status of the task"),
+      priority: z.enum(['0', '1', '2']).transform(val => Number(val) as 0 | 1 | 2).optional().describe("New priority of the task. 0 is low, 2 is high."),
     },
-    async ({ name }): Promise<CallToolResult> => {
+    async ({taskId, title, description, status, priority}, { authInfo }): Promise<CallToolResult> => {
+      const updates = {title, description, status, priority};
+      const task = await getTaskDal(authInfo).updateTask(taskId, updates);
+
       return {
         content: [
           {
             type: "text",
-            text: `Hello, ${name}!`,
+            text: `Task updated successfully: ${JSON.stringify(task)}`,
           },
         ],
       };
@@ -52,30 +81,19 @@ export const getServer = (): McpServer => {
   );
 
   server.tool(
-    "whoami",
-    "Echoes information about the caller authentication context",
-    async ({ authInfo }): Promise<CallToolResult> => {
+    "Delete task",
+    "Deletes an existing task",
+    {
+      taskId: z.number().describe("ID of the task to delete"),
+    },
+    async ({taskId}, { authInfo }): Promise<CallToolResult> => {
+      const task = await getTaskDal(authInfo).deleteTask(taskId);
+
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(authInfo),
-          },
-        ],
-      };
-    },
-  );
-
-  server.resource(
-    "greeting-resource",
-    "https://example.com/greetings/default",
-    { mimeType: "text/plain" },
-    async (): Promise<ReadResourceResult> => {
-      return {
-        contents: [
-          {
-            uri: "https://example.com/greetings/default",
-            text: "Hello, world!",
+            text: `Task deleted successfully: ${JSON.stringify(task)}`,
           },
         ],
       };
